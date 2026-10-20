@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài tập 1 - Tính tiền phòng khách sạn</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; background: #f2f4f8; margin: 0; padding: 24px 16px; color: #1c2430; }
+  .card { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+  h1 { font-size: 22px; margin: 0 0 4px; text-align: center; }
+  .sub { text-align: center; color: #5b6676; font-size: 14px; margin-bottom: 20px; }
+  label { display: block; font-weight: bold; font-size: 14px; margin: 14px 0 6px; }
+  input, select { width: 100%; padding: 10px; font-size: 15px; border: 1px solid #c5ccd8; border-radius: 8px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  button.main { width: 100%; margin-top: 20px; padding: 12px; font-size: 16px; font-weight: bold; background: #1f6feb; color: #fff; border: 0; border-radius: 8px; cursor: pointer; }
+  button.main:hover { background: #1858bd; }
+  .error { margin-top: 16px; padding: 10px 12px; background: #fdecec; color: #b42318; border-radius: 8px; font-size: 14px; display: none; }
+  .result { margin-top: 20px; display: none; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  td { padding: 8px 6px; border-bottom: 1px solid #e4e8ef; }
+  td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total td { font-size: 18px; font-weight: bold; color: #1f6feb; border-bottom: 0; padding-top: 12px; }
+  .examples { margin-top: 24px; font-size: 13px; color: #5b6676; }
+  .examples button { margin: 6px 6px 0 0; padding: 6px 10px; font-size: 13px; border: 1px solid #c5ccd8; background: #f7f9fc; border-radius: 6px; cursor: pointer; }
+  .note { margin-top: 12px; font-size: 12.5px; color: #5b6676; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>TÍNH TIỀN PHÒNG KHÁCH SẠN</h1>
+  <div class="sub">Bài tập 1 – Phân hoạch tương đương &amp; phân tích giá trị biên</div>
+
+  <div class="row">
+    <div>
+      <label for="loai">Loại phòng</label>
+      <select id="loai">
+        <option value="450000">Loại A – 450.000đ</option>
+        <option value="350000">Loại B – 350.000đ</option>
+        <option value="250000">Loại C – 250.000đ</option>
+      </select>
+    </div>
+    <div>
+      <label for="songuoi">Số người (tối đa 4)</label>
+      <input type="number" id="songuoi" min="1" max="4" step="1" value="2">
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <label for="den">Ngày giờ đến</label>
+      <input type="datetime-local" id="den" step="1">
+    </div>
+    <div>
+      <label for="di">Ngày giờ đi</label>
+      <input type="datetime-local" id="di" step="1">
+    </div>
+  </div>
+
+  <label for="dv">Tiền dịch vụ (đồng)</label>
+  <input type="number" id="dv" min="0" step="1000" value="0">
+
+  <button class="main" onclick="tinh()">Tính tiền phòng</button>
+
+  <div class="error" id="loi"></div>
+
+  <div class="result" id="ketqua">
+    <table>
+      <tr><td>Số ngày tính tiền</td><td id="r-ngay"></td></tr>
+      <tr id="r-gio-row"><td>Thời gian lưu trú (cùng ngày)</td><td id="r-gio"></td></tr>
+      <tr><td>Đơn giá phòng</td><td id="r-dongia"></td></tr>
+      <tr><td>Tiền dịch vụ</td><td id="r-dv"></td></tr>
+      <tr><td>Số ngày × đơn giá + dịch vụ</td><td id="r-tam"></td></tr>
+      <tr><td>% giảm giá</td><td id="r-gg"></td></tr>
+      <tr class="total"><td>Giá phòng</td><td id="r-tong"></td></tr>
+    </table>
+  </div>
+
+  <div class="examples">
+    Ca kiểm thử mẫu (bấm để điền sẵn):<br>
+    <button onclick="mau('A',4,'2026-06-01T12:00','2026-06-06T12:00',500000)">Ví dụ đề: A, 4 người, 5 ngày → 2.880.000</button>
+    <button onclick="mau('C',2,'2026-06-01T08:00','2026-06-08T08:00',250000)">Biên 2 triệu → giảm 10%</button>
+    <button onclick="mau('B',2,'2026-06-01T08:00','2026-06-11T08:00',500000)">Biên 4 triệu → giảm 20%</button>
+    <button onclick="mau('A',3,'2026-06-01T08:00','2026-06-01T17:30',0)">Cùng ngày → 1 ngày</button>
+  </div>
+  <div class="note">
+    Công thức: Giá phòng = (số ngày × đơn giá phòng + tiền dịch vụ) × (100% − %giảm giá).<br>
+    Đơn giá: tối đa 2 người tính giá gốc, mỗi người thứ 3 trở đi cộng thêm 10% giá gốc.
+  </div>
+</div>
+
+<script>
+  const fmt = n => Math.round(n).toLocaleString('vi-VN') + ' đ';
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function nowLocal() {
+    const d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  document.getElementById('den').value = nowLocal();
+  document.getElementById('di').value = nowLocal();
+
+  function showError(msg) {
+    const e = document.getElementById('loi');
+    e.textContent = msg;
+    e.style.display = 'block';
+    document.getElementById('ketqua').style.display = 'none';
+  }
+
+  function tinh() {
+    document.getElementById('loi').style.display = 'none';
+
+    const giaGoc = Number(document.getElementById('loai').value);
+    const soNguoiStr = document.getElementById('songuoi').value;
+    const soNguoi = Number(soNguoiStr);
+    const denStr = document.getElementById('den').value;
+    const diStr = document.getElementById('di').value;
+    const dvStr = document.getElementById('dv').value;
+    const dv = dvStr === '' ? 0 : Number(dvStr);
+
+    // Kiểm tra dữ liệu đầu vào
+    if (soNguoiStr === '' || !Number.isInteger(soNguoi) || soNguoi < 1) return showError('Số người phải là số nguyên từ 1 đến 4.');
+    if (soNguoi > 4) return showError('Mỗi phòng chứa tối đa 4 người.');
+    if (!denStr || !diStr) return showError('Vui lòng nhập đầy đủ ngày giờ đến và ngày giờ đi.');
+    if (isNaN(dv) || dv < 0) return showError('Tiền dịch vụ không được âm.');
+
+    const den = new Date(denStr), di = new Date(diStr);
+    if (di < den) return showError('Ngày đi phải sau hoặc bằng ngày đến.');
+
+    // Số ngày: chênh lệch theo ngày lịch; cùng ngày vẫn tính tròn 1 ngày
+    const dDen = Date.UTC(den.getFullYear(), den.getMonth(), den.getDate());
+    const dDi = Date.UTC(di.getFullYear(), di.getMonth(), di.getDate());
+    let soNgay = Math.round((dDi - dDen) / 86400000);
+    const cungNgay = soNgay === 0;
+    if (cungNgay) soNgay = 1;
+
+    // Đơn giá phòng: từ người thứ 3 trở đi cộng thêm 10% giá gốc / người
+    const nguoiThem = Math.max(0, soNguoi - 2);
+    const donGia = giaGoc + nguoiThem * 0.1 * giaGoc;
+
+    // % giảm giá
+    const tam = soNgay * donGia + dv;
+    let gg = 0;
+    if (tam >= 4000000) gg = 20;
+    else if (tam >= 2000000) gg = 10;
+
+    const tong = tam * (100 - gg) / 100;
+
+    document.getElementById('r-ngay').textContent = soNgay + ' ngày';
+    const gioRow = document.getElementById('r-gio-row');
+    if (cungNgay) {
+      const giay = Math.round((di - den) / 1000);
+      const h = Math.floor(giay / 3600), m = Math.floor((giay % 3600) / 60), s = giay % 60;
+      document.getElementById('r-gio').textContent = h + ' giờ ' + m + ' phút ' + s + ' giây';
+      gioRow.style.display = '';
+    } else {
+      gioRow.style.display = 'none';
+    }
+    document.getElementById('r-dongia').textContent = fmt(donGia);
+    document.getElementById('r-dv').textContent = fmt(dv);
+    document.getElementById('r-tam').textContent = fmt(tam);
+    document.getElementById('r-gg').textContent = gg + '%';
+    document.getElementById('r-tong').textContent = fmt(tong);
+    document.getElementById('ketqua').style.display = 'block';
+  }
+
+  function mau(loai, nguoi, den, di, dv) {
+    document.getElementById('loai').value = { A: 450000, B: 350000, C: 250000 }[loai];
+    document.getElementById('songuoi').value = nguoi;
+    document.getElementById('den').value = den;
+    document.getElementById('di').value = di;
+    document.getElementById('dv').value = dv;
+    tinh();
+  }
+</script>
+</body>
+</html>
